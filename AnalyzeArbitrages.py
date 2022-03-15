@@ -373,8 +373,6 @@ def createPoolsGraph(swaps, arbitrages, tokens, pools, basic_stats, arbitrage_st
 
 
 
-
-
 def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     mapping = { "uniswapv3" : "UniV3", "uniswapv2" : "UniV2", "sushiswap" : "Sushi"}
     ## Collect Data
@@ -401,6 +399,33 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     print(f"There are {len(arbitrage_stats)} arbitrages in total")
     print(f"Profitable: {sum(1 for x in total_net_profit_usd if x > 0)}")
     print(f"Not-Profitable: {sum(1 for x in total_net_profit_usd if x <= 0)}")
+
+    ## graph:  profit (and loss) histogram
+    fig, ax = plt.subplots()
+    total_profit_usd_np = np.array(total_profit_usd)
+    outliers_bitmap = (total_profit_usd_np > 3000)
+    outliers_percentage = (sum(outliers_bitmap) / len(total_profit_usd)) * 100
+    total_profit_usd_filtered = total_profit_usd_np[np.bitwise_not(outliers_bitmap)]
+    ax.hist(total_profit_usd_filtered, 20)
+    ax.set_title("Histogram of Arbitrage Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("profit [USD]")
+    ax.set_ylabel("arbitrage count")
+    plt.savefig('outputs/profit_hist.pdf')
+    plt.close(fig)
+
+    ## graph: net profit (and loss) histogram
+    fig, ax = plt.subplots()
+    total_net_profit_usd_np = np.array(total_net_profit_usd)
+    outliers_bitmap = np.bitwise_or((total_net_profit_usd_np > 600), (total_net_profit_usd_np < -200))
+    outliers_percentage = (sum(outliers_bitmap) / len(total_net_profit_usd_np)) * 100
+    total_net_profit_usd_filtered = total_net_profit_usd_np[np.bitwise_not(outliers_bitmap)]
+    ax.hist(total_net_profit_usd_filtered, 20)
+    ax.set_title("Histogram of Arbitrage Net Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("profit [USD]")
+    ax.set_ylabel("arbitrage count")
+    plt.savefig('outputs/net_profit_hist.pdf')
+    plt.close(fig)
+
     ## Top 20 - Fees
     top_fees = sorted(arbitrage_stats, key=lambda x:x.fees_usd, reverse=True)[:20]
     print(f"Average fee: {float(sum(total_fees_usd))/len(arbitrage_stats)}")
