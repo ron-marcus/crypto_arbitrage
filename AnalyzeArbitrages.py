@@ -6,6 +6,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from collections import Counter
 
+
+
 """
 Information about the collected Data:
   - SWAPS_START_BLOCK = 14020000 : Jan-17-2022 01:07:37 AM +UTC
@@ -253,12 +255,14 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     print(f"There are {len(arbitrage_stats)} arbitrages in total")
     print(f"There are {len([x for x in arbitrage_stats if x.multi_transaction])} sandwitches")
     print(f"There are {len([x for x in arbitrage_stats if not x.multi_transaction])} in-transaction arbitrages")
+    bucket_size = 100
+    block_sequence_buckets, arbitrage_blocks_buckets = bucketing(block_sequence, arbitrage_blocks, bucket_size)
     ## Graph: Number of arbitrages in each block : x - block number, y - arbitrages number
     fig, ax = plt.subplots()
-    ax.plot(block_sequence, arbitrage_blocks)
+    ax.plot(block_sequence_buckets, arbitrage_blocks_buckets)
     ax.set_xlabel('Block Number')
     ax.set_ylabel('Number of Arbitrages')
-    ax.set_title("Number of Arbitrages for Each Block")
+    ax.set_title(f"Arbitrage Count Per {bucket_size} Blocks")
     ax.ticklabel_format(useOffset=False, style='plain')
     ax.set_xticks(range(basic_stats.start_block, basic_stats.end_block+1, 10000))
     plt.savefig('outputs/arbitrages_in_blocks.pdf')
@@ -557,5 +561,9 @@ def main():
 
     
 if __name__=='__main__':
+    import psutil
+    for p in psutil.process_iter():
+        if p.name() == 'Acrobat.exe':
+            p.kill()
     main()
 
