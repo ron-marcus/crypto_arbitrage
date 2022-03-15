@@ -244,6 +244,21 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
     plt.close(fig)
 
 
+def portion_graph(total_value, portions_labels, portions_values, title, ylabel, output_path, fig_type="pie"):
+    fig, ax = plt.subplots()
+    if fig_type == "bar":
+        ax.set_title(title)
+        ax.bar(['Total'] + portions_labels, [total_value] + portions_values)
+        ax.set_ylabel(ylabel)
+    else:
+        assert(fig_type == "pie")
+        ax.set_title(title + f"\n(total {ylabel}: {int(total_value)})")
+        ax.pie(portions_values, labels=portions_labels, autopct='%1.1f%%')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close(fig)
+
+
 def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     ## Create data
     block_sequence = range(basic_stats.start_block, basic_stats.end_block + 1)
@@ -260,19 +275,11 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     print(f"There are {in_transaction_arbitrage_count} in-transaction arbitrages")
 
     ## Graph: Arbitrage Types: In-transaction vs. Sandwich
-    fig_type = "pie"  # "bar"
-    fig, ax = plt.subplots()
-    ax.set_title(f"Arbitrage Types: In-transaction vs. Sandwich")
-    if fig_type == "bar":
-        ax.bar(['Total', 'Sandwich', 'In-transaction'],
-               [arbitrage_total_count, sandwiches_count, in_transaction_arbitrage_count])
-        ax.set_ylabel('Arbitrage Count')
-    else:
-        assert(fig_type == "pie")
-        ax.pie([sandwiches_count, in_transaction_arbitrage_count], labels=['Sandwich', 'In-transaction'],
-               autopct='%1.1f%%')
-    plt.savefig('outputs/arbitrages_types.pdf')
-    plt.close(fig)
+    portion_graph(arbitrage_total_count, ['Sandwich', 'In-transaction'],
+                  [sandwiches_count, in_transaction_arbitrage_count],
+                  "Arbitrage Types: In-transaction vs. Sandwich", 'arbitrage count', 'outputs/arbitrages_types.pdf',
+                  "pie")
+
 
     ## Graph: Number of arbitrages in each block : x - block number, y - arbitrages number
     bucket_size = 100
@@ -447,20 +454,32 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     print(f"Total net profits in USD : {sum(total_net_profit_usd)}")
     print(f"Division by type (true: sandwitch):")
     pprint.pprint(profits_by_type)
+
+    ## graph: profits by type pie
+    portion_graph(sum(total_net_profit_usd), ['Sandwich', 'In-transaction'],
+                  [profits_by_type[True], profits_by_type[False]],
+                  "Net USD Profit\nArbitrage Types: In-transaction vs. Sandwich", 'net profit [USD]',
+                  'outputs/profit_arbitrages_types.pdf',
+                  "pie")
+
     ## Profits by dex
     print(f"Division by dex:")
     pprint.pprint(profits_by_exchange)
+
     keys = []
     values = []
     for k,v in sorted(profits_by_exchange.items(), key=lambda x:x[1], reverse=True):
         keys.append(k)
         values.append(int(v))
+
+    ## graph: Exchanges Combination Pie
     fig, ax = plt.subplots()
     wedges, texts, autotexts = ax.pie(values, labels=keys, autopct=lambda pct: "{:.1f}%".format(pct))
     ax.set_title('Profits for Exchanges Combination')
     ax.axis('equal')
     plt.savefig('outputs/dex_profits_pie.pdf')
     plt.close(fig)
+
     ## Main/Collateral Profits
     arbitrage_cnt = len(arbitrage_stats)
     exact_cnt = 0
