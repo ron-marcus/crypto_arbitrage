@@ -252,12 +252,31 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
         arbitrage_blocks_d[arb.block_num] = arbitrage_blocks_d.get(arb.block_num, 0) + 1
     arbitrage_blocks = [ arbitrage_blocks_d.get(b, 0) for b in block_sequence ]
     ## Number of arbitrages in total
-    print(f"There are {len(arbitrage_stats)} arbitrages in total")
-    print(f"There are {len([x for x in arbitrage_stats if x.multi_transaction])} sandwitches")
-    print(f"There are {len([x for x in arbitrage_stats if not x.multi_transaction])} in-transaction arbitrages")
+    arbitrage_total_count = len(arbitrage_stats)
+    sandwiches_count = len([x for x in arbitrage_stats if x.multi_transaction])
+    in_transaction_arbitrage_count = len([x for x in arbitrage_stats if not x.multi_transaction])
+    print(f"There are {arbitrage_total_count} arbitrages in total")
+    print(f"There are {sandwiches_count} sandwiches")
+    print(f"There are {in_transaction_arbitrage_count} in-transaction arbitrages")
+
+    ## Graph: Arbitrage Types: In-transaction vs. Sandwich
+    fig_type = "pie"  # "bar"
+    fig, ax = plt.subplots()
+    ax.set_title(f"Arbitrage Types: In-transaction vs. Sandwich")
+    if fig_type == "bar":
+        ax.bar(['Total', 'Sandwich', 'In-transaction'],
+               [arbitrage_total_count, sandwiches_count, in_transaction_arbitrage_count])
+        ax.set_ylabel('Arbitrage Count')
+    else:
+        assert(fig_type == "pie")
+        ax.pie([sandwiches_count, in_transaction_arbitrage_count], labels=['Sandwich', 'In-transaction'],
+               autopct='%1.1f%%')
+    plt.savefig('outputs/arbitrages_types.pdf')
+    plt.close(fig)
+
+    ## Graph: Number of arbitrages in each block : x - block number, y - arbitrages number
     bucket_size = 100
     block_sequence_buckets, arbitrage_blocks_buckets = bucketing(block_sequence, arbitrage_blocks, bucket_size)
-    ## Graph: Number of arbitrages in each block : x - block number, y - arbitrages number
     fig, ax = plt.subplots()
     ax.plot(block_sequence_buckets, arbitrage_blocks_buckets)
     ax.set_xlabel('Block Number')
@@ -331,13 +350,29 @@ def createPoolsGraph(swaps, arbitrages, tokens, pools, basic_stats, arbitrage_st
             pools_hist[pools[p]["name"]] = pools_hist.get(pools[p]["name"], 0) + v
     ## Print Stats
     print(f"Used {len(pools_hist.keys())} pools in arbitrages")
-    all_pools = sorted(pools_hist.items(), key=lambda x:x[1], reverse=True)
+    all_pools = sorted(pools_hist.items(), key=lambda x: x[1], reverse=True)
     print(f"Average number of swaps per pool is {sum([x[1] for x in all_pools])/float(len(all_pools))}")
     ## Top 20 pools participating in arbitrage
     top_pools = all_pools[:20]
     print(f"Top 20 pools used in arbitrage")
     for p,v in top_pools:
         print(f"Pool {p} : {v}")
+
+    ## graph: top pools bars
+    fig, ax = plt.subplots()
+    ax.bar([p[0] for p in top_pools], [p[1] for p in top_pools])
+    ax.set_title("top pools: most used for arbitrage")
+    ax.set_ylabel("swaps count")
+    ax.set_xlabel("pool name")
+    for label in ax.get_xticklabels():
+        label.set_rotation(90)
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig('outputs/top_pools_bars.pdf')
+    plt.close(fig)
+
+
+
 
 
 def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
