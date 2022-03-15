@@ -447,6 +447,39 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     plt.savefig('outputs/fee_hist.pdf')
     plt.close(fig)
 
+    ## graph: profit fee correlation
+    fig, axs = plt.subplots(1, 2, figsize=([12.8, 4.8]))
+    total_profit_usd_np = np.array(total_profit_usd)
+    total_fees_usd_np = np.array(total_fees_usd)
+    outliers_bitmap = total_profit_usd_np>10000
+    outliers_percentage = (sum(outliers_bitmap) / len(total_profit_usd_np)) * 100
+    total_fees_usd_filtered = total_fees_usd_np[np.bitwise_not(outliers_bitmap)]
+    total_profit_usd_filtered = total_profit_usd_np[np.bitwise_not(outliers_bitmap)]
+    axs[0].scatter(total_fees_usd_filtered, total_profit_usd_filtered)
+    axs[0].set_title("profit  vs. fee")
+    axs[0].set_xlabel("fee [USD]")
+    axs[0].set_ylabel("profit [USD]")
+    total_fees_usd_outliers = total_fees_usd_np[outliers_bitmap]
+    total_profit_usd_outliers = total_profit_usd_np[outliers_bitmap]
+    axs[1].scatter(total_fees_usd_outliers, total_profit_usd_outliers)
+    axs[1].set_title("outliers: profit  vs. fee")
+    axs[1].set_xlabel("fee [USD]")
+    axs[1].set_ylabel("profit [USD]")
+    plt.savefig('outputs/profit_fee_correlation_separated.pdf')
+    plt.close(fig)
+
+    ## graph: profit fee correlation
+    fig, ax = plt.subplots()
+    ax.scatter(total_fees_usd, total_profit_usd)
+    ax.set_title("profit  vs. fee")
+    ax.set_xlabel("fee [USD]")
+    ax.set_ylabel("profit [USD]")
+    plt.savefig('outputs/profit_fee_correlation.pdf')
+    plt.close(fig)
+
+
+
+
     ## Top 20 - Fees
     top_fees = sorted(arbitrage_stats, key=lambda x:x.fees_usd, reverse=True)[:20]
     print(f"Average fee: {float(sum(total_fees_usd))/len(arbitrage_stats)}")
