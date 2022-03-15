@@ -548,6 +548,35 @@ def createTokensGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     print(f"Number of different tokens profited from")
     pprint.pprint(num_tokens_profited)
 
+    ## graph: top tokens profit
+    top_tokens_profit = sorted(list(token_profited_num.items()), key=lambda x: x[1], reverse=True)[:20]
+    fig, ax = plt.subplots()
+    ax.bar([t[0] for t in top_tokens_profit], [t[1] for t in top_tokens_profit])
+    ax.set_title("Top Tokens - Total Profit")
+    ax.set_ylabel("Profit [USD]")
+    ax.set_xlabel("Token Symbol")
+    for label in ax.get_xticklabels():
+        label.set_rotation(90)
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig('outputs/top_tokens_profit.pdf')
+    plt.close(fig)
+
+    ## graph: top tokens used
+    top_tokens_arbitrage_count = sorted(list(token_arbitrages_num.items()), key=lambda x: x[1], reverse=True)[:20]
+    fig, ax = plt.subplots()
+    ax.bar([t[0] for t in top_tokens_arbitrage_count], [t[1] for t in top_tokens_arbitrage_count])
+    ax.set_title("Top Tokens - Arbitrage Count")
+    ax.set_ylabel("Arbitrage Count")
+    ax.set_xlabel("Token Symbol")
+    for label in ax.get_xticklabels():
+        label.set_rotation(90)
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig('outputs/top_tokens_arbitrage_count.pdf')
+    plt.close(fig)
+
+
 
 def createCycleGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     ## Collect Data
