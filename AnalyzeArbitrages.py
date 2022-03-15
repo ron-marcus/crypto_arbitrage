@@ -434,6 +434,19 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     plt.savefig('outputs/net_profit_hist.pdf')
     plt.close(fig)
 
+    ## graph: fee histogram
+    fig, ax = plt.subplots()
+    total_fees_usd_np = np.array(total_fees_usd)
+    outliers_bitmap = total_fees_usd_np>1500
+    outliers_percentage = (sum(outliers_bitmap) / len(total_fees_usd_np)) * 100
+    total_fees_usd_filtered = total_fees_usd_np[np.bitwise_not(outliers_bitmap)]
+    ax.hist(total_fees_usd_filtered, 20)
+    ax.set_title("Histogram of fee \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("fee [USD]")
+    ax.set_ylabel("arbitrage count")
+    plt.savefig('outputs/fee_hist.pdf')
+    plt.close(fig)
+
     ## Top 20 - Fees
     top_fees = sorted(arbitrage_stats, key=lambda x:x.fees_usd, reverse=True)[:20]
     print(f"Average fee: {float(sum(total_fees_usd))/len(arbitrage_stats)}")
