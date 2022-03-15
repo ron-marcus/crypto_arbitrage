@@ -245,6 +245,7 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
 
 
 def portion_graph(total_value, portions_labels, portions_values, title, ylabel, output_path, fig_type="pie"):
+    portions_labels = [str(x) for x in portions_labels]
     fig, ax = plt.subplots()
     if fig_type == "bar":
         ax.set_title(title)
@@ -581,7 +582,12 @@ def createCycleGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     print("Sandwitch Start index:")
     pprint.pprint(sorted([x for x in sandwitch_start_transaction_index.items()], key = lambda x:x[0]))
         
- 
+    ## graph: cycles length
+    in_trans_cycle_len_pairs = sorted([x for x in total_cycle_len.items()], key=lambda x: x[1], reverse=True)
+    in_trans_lengths =  [x[0] for x in in_trans_cycle_len_pairs]
+    in_trans_counts = [x[1] for x in in_trans_cycle_len_pairs]
+    portion_graph(sum(total_cycle_len.values()), in_trans_lengths, in_trans_counts,
+                  "In-transaction Arbitrage - Cycle Length", "cycle count", "outputs/in_trans_cycle_len.pdf", "bar")
 
 def main():
     print(f"Loading data")
