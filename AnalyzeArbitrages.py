@@ -224,7 +224,7 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
     print(f"Number of swaps in arbitrages is {number_of_swaps_in_arbitrages} : {percentage}")
     ## Graph: On x-axis block number. On y-axis: total swaps and swaps in arbitrage
     fig, axs = plt.subplots(1, 2, figsize=([9.6, 4.8]), gridspec_kw={'width_ratios': [3, 1]})
-    fig.suptitle("swaps count per block: total vs. arbitrage")
+    fig.suptitle("Swaps Count Per Block: Total vs. Arbitrage")
     bucket_size = 100
     block_sequence_buckets, all_swaps_buckets = bucketing(block_sequence, all_swaps, bucket_size)
     block_sequence_buckets, arbitrage_swaps_buckets = bucketing(block_sequence, arbitrage_swaps, bucket_size)
@@ -238,10 +238,13 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
     axs[0].legend()
     axs[1].bar(['Total', 'Arbitrage'], [np.average(all_swaps), np.average(arbitrage_swaps)])
     axs[1].set_ylabel('Number of Swaps')
-    axs[1].set_title("avarage")
+    axs[1].set_title("average")
     plt.tight_layout()
-    plt.savefig('outputs/swaps_in_arbitrage.pdf')
+    plt.savefig('outputs/swaps_in_arbitrage.png')
     plt.close(fig)
+    print(f"average of arbitrage swaps per block: {np.average(arbitrage_swaps)}")
+    print(f"average of total swaps per block: {np.average(all_swaps)}")
+    print(f"average_swaps/average_arbitrage_swaps : {np.average(all_swaps)/np.average(arbitrage_swaps)}")
 
 
 def portion_graph(total_value, portions_labels, portions_values, title, ylabel, output_path, fig_type="pie"):
@@ -278,7 +281,7 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     ## Graph: Arbitrage Types: In-transaction vs. Sandwich
     portion_graph(arbitrage_total_count, ['Sandwich', 'In-transaction'],
                   [sandwiches_count, in_transaction_arbitrage_count],
-                  "Arbitrage Types: In-transaction vs. Sandwich", 'arbitrage count', 'outputs/arbitrages_types.pdf',
+                  "Arbitrage Types: In-transaction vs. Sandwich", 'arbitrage count', 'outputs/arbitrages_types.png',
                   "pie")
 
 
@@ -292,7 +295,7 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     ax.set_title(f"Arbitrage Count Per {bucket_size} Blocks")
     ax.ticklabel_format(useOffset=False, style='plain')
     ax.set_xticks(range(basic_stats.start_block, basic_stats.end_block+1, 10000))
-    plt.savefig('outputs/arbitrages_in_blocks.pdf')
+    plt.savefig('outputs/arbitrages_in_blocks.png')
     plt.close(fig)
 
     ## Table of number of arbitrages in each block
@@ -301,6 +304,17 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     for num, total in sorted(c.items()):
         print(f"Arbitrages {num} in {total} blocks")
     print(f"Number of blocks with arbitrage: {len(arbitrage_blocks_d.keys())}")
+
+    ## graph: arbitrage count histogram
+    fig, ax = plt.subplots()
+    ax.bar(c.keys(), c.values())
+    ax.set_xlabel('arbitrage count per block')
+    ax.set_ylabel('blocks count')
+    ax.set_title("Arbitrage Count Histogram")
+    ax.ticklabel_format(useOffset=False, style='plain')
+    plt.savefig('outputs/arbitrage_count_histogram.png')
+    plt.close(fig)
+
 
     ## Histogram of frequency between arbitrages in blocks
     frequencies = []
@@ -323,8 +337,10 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     ax.set_ylabel('Frequency')
     ax.set_title("Arbitrages Frequency")
     ax.ticklabel_format(useOffset=False, style='plain')
-    plt.savefig('outputs/arbitrages_frequency.pdf')
+    plt.savefig('outputs/arbitrages_frequency.png')
     plt.close(fig)
+
+    print(f"median of the interval size between blocks with arbitrage: {sorted(frequencies)[int(0.5 * len(frequencies))]} blocks")
    
 def createExchangesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     mapping = { "uniswapv3" : "UniV3", "uniswapv2" : "UniV2", "sushiswap" : "Sushi"}
@@ -346,7 +362,7 @@ def createExchangesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats
     ax.pie(values, labels=keys, autopct='%1.1f%%')
     ax.set_title('Exchanges Used in Arbitrages')
     ax.axis('equal')
-    plt.savefig('outputs/dex_pie.pdf')
+    plt.savefig('outputs/dex_pie.png')
     plt.close(fig)
 
 
@@ -376,7 +392,7 @@ def createPoolsGraph(swaps, arbitrages, tokens, pools, basic_stats, arbitrage_st
         label.set_rotation(90)
     ax.grid()
     plt.tight_layout()
-    plt.savefig('outputs/top_pools_bars.pdf')
+    plt.savefig('outputs/top_pools_bars.png')
     plt.close(fig)
 
 
@@ -418,7 +434,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     ax.set_title("Histogram of Arbitrage Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
     ax.set_xlabel("profit [USD]")
     ax.set_ylabel("arbitrage count")
-    plt.savefig('outputs/profit_hist.pdf')
+    plt.savefig('outputs/profit_hist.png')
     plt.close(fig)
 
     ## graph: net profit (and loss) histogram
@@ -431,7 +447,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     ax.set_title("Histogram of Arbitrage Net Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
     ax.set_xlabel("profit [USD]")
     ax.set_ylabel("arbitrage count")
-    plt.savefig('outputs/net_profit_hist.pdf')
+    plt.savefig('outputs/net_profit_hist.png')
     plt.close(fig)
 
     ## graph: fee histogram
@@ -444,7 +460,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     ax.set_title("Histogram of fee \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
     ax.set_xlabel("fee [USD]")
     ax.set_ylabel("arbitrage count")
-    plt.savefig('outputs/fee_hist.pdf')
+    plt.savefig('outputs/fee_hist.png')
     plt.close(fig)
 
     ## graph: profit fee correlation
@@ -465,7 +481,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     axs[1].set_title("outliers: profit  vs. fee")
     axs[1].set_xlabel("fee [USD]")
     axs[1].set_ylabel("profit [USD]")
-    plt.savefig('outputs/profit_fee_correlation_separated.pdf')
+    plt.savefig('outputs/profit_fee_correlation_separated.png')
     plt.close(fig)
 
     ## graph: profit fee correlation
@@ -474,7 +490,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     ax.set_title("profit  vs. fee")
     ax.set_xlabel("fee [USD]")
     ax.set_ylabel("profit [USD]")
-    plt.savefig('outputs/profit_fee_correlation.pdf')
+    plt.savefig('outputs/profit_fee_correlation.png')
     plt.close(fig)
 
 
@@ -506,7 +522,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     portion_graph(sum(total_net_profit_usd), ['Sandwich', 'In-transaction'],
                   [profits_by_type[True], profits_by_type[False]],
                   "Net USD Profit\nArbitrage Types: In-transaction vs. Sandwich", 'net profit [USD]',
-                  'outputs/profit_arbitrages_types.pdf',
+                  'outputs/profit_arbitrages_types.png',
                   "pie")
 
     ## Profits by dex
@@ -524,7 +540,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     wedges, texts, autotexts = ax.pie(values, labels=keys, autopct=lambda pct: "{:.1f}%".format(pct))
     ax.set_title('Profits for Exchanges Combination')
     ax.axis('equal')
-    plt.savefig('outputs/dex_profits_pie.pdf')
+    plt.savefig('outputs/dex_profits_pie.png')
     plt.close(fig)
 
     ## Main/Collateral Profits
@@ -551,7 +567,7 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     ## ax.set_ylabel('Amount [USD]')
     ## ax.set_title("Fees and Profits for Arbitrages")
     ## ax.legend()
-    ## plt.savefig('outputs/fees_and_profits.pdf')
+    ## plt.savefig('outputs/fees_and_profits.png')
     ## plt.show()
     ## plt.close(fig)
 
@@ -605,7 +621,7 @@ def createTokensGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
         label.set_rotation(90)
     ax.grid()
     plt.tight_layout()
-    plt.savefig('outputs/top_tokens_profit.pdf')
+    plt.savefig('outputs/top_tokens_profit.png')
     plt.close(fig)
 
     ## graph: top tokens used
@@ -619,7 +635,7 @@ def createTokensGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
         label.set_rotation(90)
     ax.grid()
     plt.tight_layout()
-    plt.savefig('outputs/top_tokens_arbitrage_count.pdf')
+    plt.savefig('outputs/top_tokens_arbitrage_count.png')
     plt.close(fig)
 
 
@@ -662,7 +678,7 @@ def createCycleGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     in_trans_lengths =  [x[0] for x in in_trans_cycle_len_pairs]
     in_trans_counts = [x[1] for x in in_trans_cycle_len_pairs]
     portion_graph(sum(total_cycle_len.values()), in_trans_lengths, in_trans_counts,
-                  "In-transaction Arbitrage - Cycle Length", "cycle count", "outputs/in_trans_cycle_len.pdf", "bar")
+                  "In-transaction Arbitrage - Cycle Length", "cycle count", "outputs/in_trans_cycle_len.png", "bar")
 
 def main():
     print(f"Loading data")
