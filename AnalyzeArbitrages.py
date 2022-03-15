@@ -21,7 +21,7 @@ SWAPS_END_BLOCK   = 14050000
 WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
 def loadJson(file):
-    with open(file, 'r') as json_file:
+    with open(file, 'r', encoding='utf-8') as json_file:
         return json.load(json_file)
     try:
         with open(file, 'r') as json_file:
@@ -197,6 +197,15 @@ def printStats(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     print(f"Total number of pools: {basic_stats.num_total_pools}")
     print(f"Total number of swaps: {basic_stats.num_total_swaps}")
     
+def bucketing(xs, ys, bucket_size):
+    new_x_min = min(xs) - (min(xs) % bucket_size)
+    new_xs = list(range(new_x_min, max(xs)+1, bucket_size))
+    new_ys = [0] * len(new_xs)
+    for x, y in zip(xs, ys):
+        new_x = x - (x % bucket_size)
+        new_x_idx = int((new_x - new_x_min)/bucket_size)
+        new_ys[new_x_idx] += y
+    return new_xs, new_ys
 
 def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     ## Create data
@@ -213,11 +222,14 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
     print(f"Number of swaps in arbitrages is {number_of_swaps_in_arbitrages} : {percentage}")
     ## Graph: On x-axis block number. On y-axis: total swaps and swaps in arbitrage
     fig, ax = plt.subplots()
-    ax.plot(block_sequence, all_swaps, label='All')
-    ax.plot(block_sequence, arbitrage_swaps, label='Arbitrage')
+    bucket_size = 100
+    block_sequence_buckets, all_swaps_buckets = bucketing(block_sequence, all_swaps, bucket_size)
+    block_sequence_buckets, arbitrage_swaps_buckets = bucketing(block_sequence, arbitrage_swaps, bucket_size)
+    ax.plot(block_sequence_buckets, all_swaps_buckets , label='Total')
+    ax.plot(block_sequence_buckets, arbitrage_swaps_buckets, label='For Arbitrage')
     ax.set_xlabel('Block Number')
     ax.set_ylabel('Number of Swaps')
-    ax.set_title("Number of Swaps used in Arbitrages for Each Blocks")
+    ax.set_title(f"swaps count per {bucket_size} blocks: total vs. for-arbitrage")
     ax.ticklabel_format(useOffset=False, style='plain')
     ax.set_xticks(range(basic_stats.start_block, basic_stats.end_block+1, 10000))
     ax.legend()
