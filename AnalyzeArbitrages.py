@@ -6,8 +6,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from collections import Counter
 
-
-
 """
 Information about the collected Data:
   - SWAPS_START_BLOCK = 14020000 : Jan-17-2022 01:07:37 AM +UTC
@@ -196,7 +194,7 @@ def printStats(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     print(f"Total number of blocks: {basic_stats.num_total_blocks}")
     print(f"Total number of transactions: {basic_stats.num_total_transactions}")
     print(f"Number of blocks with swaps is {len(basic_stats.swaps_in_blocks)}")
-    print(f"Total number of pools: {basic_stats.num_total_pools}")
+    print(f"Total number of pools used: {basic_stats.num_total_pools}")
     print(f"Total number of swaps: {basic_stats.num_total_swaps}")
     
 def bucketing(xs, ys, bucket_size):
@@ -223,28 +221,28 @@ def createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrag
     print(f"Number of blocks with arbitrages is {len(arbitrage_swaps_d)}")
     print(f"Number of swaps in arbitrages is {number_of_swaps_in_arbitrages} : {percentage}")
     ## Graph: On x-axis block number. On y-axis: total swaps and swaps in arbitrage
-    fig, axs = plt.subplots(1, 2, figsize=([9.6, 4.8]), gridspec_kw={'width_ratios': [3, 1]})
-    fig.suptitle("Swaps Count Per Block: Total vs. Arbitrage")
+    fig, axs = plt.subplots(1, 2, figsize=([11.6, 4.8]), gridspec_kw={'width_ratios': [3, 1]})
+    fig.suptitle("Swaps Count per Block: Total vs. Swaps in Arbitrages")
     bucket_size = 100
     block_sequence_buckets, all_swaps_buckets = bucketing(block_sequence, all_swaps, bucket_size)
     block_sequence_buckets, arbitrage_swaps_buckets = bucketing(block_sequence, arbitrage_swaps, bucket_size)
     axs[0].plot(block_sequence_buckets, all_swaps_buckets , label='Total')
-    axs[0].plot(block_sequence_buckets, arbitrage_swaps_buckets, label='Arbitrage')
+    axs[0].plot(block_sequence_buckets, arbitrage_swaps_buckets, label='Swaps in Arbitrages')
     axs[0].set_xlabel('Block Number')
-    axs[0].set_ylabel('Number of Swaps')
-    axs[0].set_title(f"swaps count per {bucket_size} blocks")
+    axs[0].set_ylabel(f'Number of Swaps per {bucket_size} Blocks')
+    axs[0].set_title(f"Swaps Count per {bucket_size} Blocks")
     axs[0].ticklabel_format(useOffset=False, style='plain')
     axs[0].set_xticks(range(basic_stats.start_block, basic_stats.end_block+1, 10000))
     axs[0].legend()
-    axs[1].bar(['Total', 'Arbitrage'], [np.average(all_swaps), np.average(arbitrage_swaps)])
+    axs[1].bar(['Total', 'Swaps in Arbitrages'], [np.average(all_swaps), np.average(arbitrage_swaps)])
+    for bar in axs[1].patches:
+        axs[1].annotate(format(bar.get_height(), '.2f'), (bar.get_x() + bar.get_width() / 2, bar.get_height()), ha='center', va='center',
+                   size=10, xytext=(0, 4), textcoords='offset points')
     axs[1].set_ylabel('Number of Swaps')
-    axs[1].set_title("average")
+    axs[1].set_title("Avarage Number of Swaps per Block")
     plt.tight_layout()
     plt.savefig('outputs/swaps_in_arbitrage.png')
     plt.close(fig)
-    print(f"average of arbitrage swaps per block: {np.average(arbitrage_swaps)}")
-    print(f"average of total swaps per block: {np.average(all_swaps)}")
-    print(f"average_swaps/average_arbitrage_swaps : {np.average(all_swaps)/np.average(arbitrage_swaps)}")
 
 
 def portion_graph(total_value, portions_labels, portions_values, title, ylabel, output_path, fig_type="pie"):
@@ -256,7 +254,7 @@ def portion_graph(total_value, portions_labels, portions_values, title, ylabel, 
         ax.set_ylabel(ylabel)
     else:
         assert(fig_type == "pie")
-        ax.set_title(title + f"\n(total {ylabel}: {int(total_value)})")
+        ax.set_title(title + f"\n(Total {ylabel}: {int(total_value)})")
         ax.pie(portions_values, labels=portions_labels, autopct='%1.1f%%')
     plt.tight_layout()
     plt.savefig(output_path)
@@ -279,9 +277,9 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     print(f"There are {in_transaction_arbitrage_count} in-transaction arbitrages")
 
     ## Graph: Arbitrage Types: In-transaction vs. Sandwich
-    portion_graph(arbitrage_total_count, ['Sandwich', 'In-transaction'],
+    portion_graph(arbitrage_total_count, ['Multi-Transaction', 'Single-Transaction'],
                   [sandwiches_count, in_transaction_arbitrage_count],
-                  "Arbitrage Types: In-transaction vs. Sandwich", 'arbitrage count', 'outputs/arbitrages_types.png',
+                  "Arbitrage Types Count: Single-Transaction vs. Multi-Transaction", 'Arbitrage Count', 'outputs/arbitrages_types.png',
                   "pie")
 
 
@@ -300,19 +298,25 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
 
     ## Table of number of arbitrages in each block
     c = Counter(arbitrage_blocks)
+    print(f"Average number of arbitrages per-block is {np.average(arbitrage_blocks)}")
     print(f"Counters for number of arbitrages in block")
+    x = []
+    y = []
     for num, total in sorted(c.items()):
+        x.append(num)
+        y.append(total)
         print(f"Arbitrages {num} in {total} blocks")
     print(f"Number of blocks with arbitrage: {len(arbitrage_blocks_d.keys())}")
-
-    ## graph: arbitrage count histogram
     fig, ax = plt.subplots()
-    ax.bar(c.keys(), c.values())
-    ax.set_xlabel('arbitrage count per block')
-    ax.set_ylabel('blocks count')
-    ax.set_title("Arbitrage Count Histogram")
+    ax.bar(x, y)
+    for bar in ax.patches:
+        ax.annotate(bar.get_height(), (bar.get_x() + bar.get_width() / 2, bar.get_height()), ha='center', va='center',
+                   size=10, xytext=(0, 4), textcoords='offset points')
+    ax.set_xlabel('Number of Arbitrages in Block')
+    ax.set_ylabel('Number of Blocks')
+    ax.set_title("Number of Arbitrages in a Single Block Histogram")
     ax.ticklabel_format(useOffset=False, style='plain')
-    plt.savefig('outputs/arbitrage_count_histogram.png')
+    plt.savefig('outputs/num_arbitrages_in_block.png')
     plt.close(fig)
 
 
@@ -339,8 +343,6 @@ def createArbitragesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stat
     ax.ticklabel_format(useOffset=False, style='plain')
     plt.savefig('outputs/arbitrages_frequency.png')
     plt.close(fig)
-
-    print(f"median of the interval size between blocks with arbitrage: {sorted(frequencies)[int(0.5 * len(frequencies))]} blocks")
    
 def createExchangesGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     mapping = { "uniswapv3" : "UniV3", "uniswapv2" : "UniV2", "sushiswap" : "Sushi"}
@@ -383,13 +385,13 @@ def createPoolsGraph(swaps, arbitrages, tokens, pools, basic_stats, arbitrage_st
         print(f"Pool {p} : {v}")
 
     ## graph: top pools bars
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=([8, 6]))
     ax.bar([p[0] for p in top_pools], [p[1] for p in top_pools])
-    ax.set_title("top pools: most used for arbitrage")
-    ax.set_ylabel("swaps count")
-    ax.set_xlabel("pool name")
+    ax.set_title("Top Pools: 20 Most Used for Arbitrage")
+    ax.set_ylabel("Swaps Count")
+    ax.set_xlabel("Pool Name")
     for label in ax.get_xticklabels():
-        label.set_rotation(90)
+        label.set_rotation(80)
     ax.grid()
     plt.tight_layout()
     plt.savefig('outputs/top_pools_bars.png')
@@ -431,9 +433,9 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     outliers_percentage = (sum(outliers_bitmap) / len(total_profit_usd)) * 100
     total_profit_usd_filtered = total_profit_usd_np[np.bitwise_not(outliers_bitmap)]
     ax.hist(total_profit_usd_filtered, 20)
-    ax.set_title("Histogram of Arbitrage Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
-    ax.set_xlabel("profit [USD]")
-    ax.set_ylabel("arbitrage count")
+    ax.set_title("Histogram of Arbitrage Profit \n(Dropped Outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("Profit [USD]")
+    ax.set_ylabel("Arbitrage Count")
     plt.savefig('outputs/profit_hist.png')
     plt.close(fig)
 
@@ -444,9 +446,9 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     outliers_percentage = (sum(outliers_bitmap) / len(total_net_profit_usd_np)) * 100
     total_net_profit_usd_filtered = total_net_profit_usd_np[np.bitwise_not(outliers_bitmap)]
     ax.hist(total_net_profit_usd_filtered, 20)
-    ax.set_title("Histogram of Arbitrage Net Profit \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
-    ax.set_xlabel("profit [USD]")
-    ax.set_ylabel("arbitrage count")
+    ax.set_title("Histogram of Arbitrage Net-Profit \n(Dropped Outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("Profit [USD]")
+    ax.set_ylabel("Arbitrage Count")
     plt.savefig('outputs/net_profit_hist.png')
     plt.close(fig)
 
@@ -457,9 +459,9 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     outliers_percentage = (sum(outliers_bitmap) / len(total_fees_usd_np)) * 100
     total_fees_usd_filtered = total_fees_usd_np[np.bitwise_not(outliers_bitmap)]
     ax.hist(total_fees_usd_filtered, 20)
-    ax.set_title("Histogram of fee \n(dropped outliers: {:.2f}%)".format(outliers_percentage))
-    ax.set_xlabel("fee [USD]")
-    ax.set_ylabel("arbitrage count")
+    ax.set_title("Histogram of Fees \n(Dropped Outliers: {:.2f}%)".format(outliers_percentage))
+    ax.set_xlabel("Fee [USD]")
+    ax.set_ylabel("Arbitrage Count")
     plt.savefig('outputs/fee_hist.png')
     plt.close(fig)
 
@@ -472,15 +474,15 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     total_fees_usd_filtered = total_fees_usd_np[np.bitwise_not(outliers_bitmap)]
     total_profit_usd_filtered = total_profit_usd_np[np.bitwise_not(outliers_bitmap)]
     axs[0].scatter(total_fees_usd_filtered, total_profit_usd_filtered)
-    axs[0].set_title("profit  vs. fee")
-    axs[0].set_xlabel("fee [USD]")
-    axs[0].set_ylabel("profit [USD]")
+    axs[0].set_title("Profit vs. Fee for Majority of Arbitrages")
+    axs[0].set_xlabel("Fee [USD]")
+    axs[0].set_ylabel("Profit [USD]")
     total_fees_usd_outliers = total_fees_usd_np[outliers_bitmap]
     total_profit_usd_outliers = total_profit_usd_np[outliers_bitmap]
     axs[1].scatter(total_fees_usd_outliers, total_profit_usd_outliers)
-    axs[1].set_title("outliers: profit  vs. fee")
-    axs[1].set_xlabel("fee [USD]")
-    axs[1].set_ylabel("profit [USD]")
+    axs[1].set_title("Profit vs. Fee for Outliers")
+    axs[1].set_xlabel("Fee [USD]")
+    axs[1].set_ylabel("Profit [USD]")
     plt.savefig('outputs/profit_fee_correlation_separated.png')
     plt.close(fig)
 
@@ -519,9 +521,9 @@ def createFeesAndProfitsGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_
     pprint.pprint(profits_by_type)
 
     ## graph: profits by type pie
-    portion_graph(sum(total_net_profit_usd), ['Sandwich', 'In-transaction'],
+    portion_graph(sum(total_net_profit_usd), ['Multi-Transaction', 'Single-Transaction'],
                   [profits_by_type[True], profits_by_type[False]],
-                  "Net USD Profit\nArbitrage Types: In-transaction vs. Sandwich", 'net profit [USD]',
+                  "Net USD Profit\nArbitrage Types: Single-Transaction vs. Multi-Transaction", 'Net Profit [USD]',
                   'outputs/profit_arbitrages_types.png',
                   "pie")
 
@@ -610,32 +612,64 @@ def createTokensGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     print(f"Number of different tokens profited from")
     pprint.pprint(num_tokens_profited)
 
-    ## graph: top tokens profit
+    ## graph: top tokens used
+    top_tokens_arbitrage_count = sorted(list(token_arbitrages_num.items()), key=lambda x: x[1], reverse=True)[:20]
+    fig, ax = plt.subplots()
+    ax.bar([t[0] for t in top_tokens_arbitrage_count], [t[1] for t in top_tokens_arbitrage_count])
+    ax.set_title("Top 20 Tokens Used in Arbitrage")
+    ax.set_ylabel("Number Arbitrages that Used Token")
+    ax.set_xlabel("Token Symbol")
+    for label in ax.get_xticklabels():
+        label.set_rotation(70)
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig('outputs/top_tokens_arbitrage_count.png')
+    plt.close(fig)
+
+    ## graph: top tokens profit number
     top_tokens_profit = sorted(list(token_profited_num.items()), key=lambda x: x[1], reverse=True)[:20]
     fig, ax = plt.subplots()
     ax.bar([t[0] for t in top_tokens_profit], [t[1] for t in top_tokens_profit])
-    ax.set_title("Top Tokens - Total Profit")
-    ax.set_ylabel("Profit [USD]")
+    ax.set_title("Top 20 Tokens Profited From in Arbitrages - Count")
+    ax.set_ylabel("Number Arbitrages that Profited from Token")
     ax.set_xlabel("Token Symbol")
     for label in ax.get_xticklabels():
-        label.set_rotation(90)
+        label.set_rotation(70)
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig('outputs/top_tokens_profit_num.png')
+    plt.close(fig)
+
+    ## graph: top tokens profit
+    top_tokens_profit = sorted(list(token_profit_amount.items()), key=lambda x: x[1], reverse=True)[:20]
+    fig, ax = plt.subplots()
+    ax.bar([t[0] for t in top_tokens_profit], [t[1] for t in top_tokens_profit])
+    ax.set_title("Top 20 Tokens Profited From in Arbitrages - Profit")
+    ax.set_ylabel("Total Profit from Token [USD]")
+    ax.set_xlabel("Token Symbol")
+    for label in ax.get_xticklabels():
+        label.set_rotation(70)
     ax.grid()
     plt.tight_layout()
     plt.savefig('outputs/top_tokens_profit.png')
     plt.close(fig)
 
-    ## graph: top tokens used
-    top_tokens_arbitrage_count = sorted(list(token_arbitrages_num.items()), key=lambda x: x[1], reverse=True)[:20]
+    ## graph: different tokens used
+    x = []
+    y = []
+    for k, v in num_tokens_used.items():
+        x.append(k)
+        y.append(v)
     fig, ax = plt.subplots()
-    ax.bar([t[0] for t in top_tokens_arbitrage_count], [t[1] for t in top_tokens_arbitrage_count])
-    ax.set_title("Top Tokens - Arbitrage Count")
-    ax.set_ylabel("Arbitrage Count")
-    ax.set_xlabel("Token Symbol")
-    for label in ax.get_xticklabels():
-        label.set_rotation(90)
-    ax.grid()
-    plt.tight_layout()
-    plt.savefig('outputs/top_tokens_arbitrage_count.png')
+    ax.bar(x, y)
+    for bar in ax.patches:
+        ax.annotate(bar.get_height(), (bar.get_x() + bar.get_width() / 2, bar.get_height()), ha='center', va='center',
+                   size=10, xytext=(0, 4), textcoords='offset points')
+    ax.set_xlabel('Number of Different Tokens Used in Same Arbitrage')
+    ax.set_ylabel('Number of Arbitrages')
+    ax.set_title("Number of Tokens Used in Arbitrage")
+    ax.ticklabel_format(useOffset=False, style='plain')
+    plt.savefig('outputs/num_tokens_in_arbitrage.png')
     plt.close(fig)
 
 
@@ -678,7 +712,91 @@ def createCycleGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
     in_trans_lengths =  [x[0] for x in in_trans_cycle_len_pairs]
     in_trans_counts = [x[1] for x in in_trans_cycle_len_pairs]
     portion_graph(sum(total_cycle_len.values()), in_trans_lengths, in_trans_counts,
-                  "In-transaction Arbitrage - Cycle Length", "cycle count", "outputs/in_trans_cycle_len.png", "bar")
+                  "Cycle Length for Arbitrages - Number of Swaps", "Cycle Count", "outputs/cycle_len.png", "bar")
+    x = []
+    y = []
+    for k, v in total_cycle_len.items():
+        x.append(k)
+        y.append(v)
+    fig, ax = plt.subplots()
+    ax.bar(x, y)
+    for bar in ax.patches:
+        ax.annotate(bar.get_height(), (bar.get_x() + bar.get_width() / 2, bar.get_height()), ha='center', va='center',
+                   size=10, xytext=(0, 4), textcoords='offset points')
+    ax.set_xlabel('Number of Swaps in Arbitrage')
+    ax.set_ylabel('Number of Arbitrages')
+    ax.set_title("Cycle Length - Number of Swaps in Arbitrage")
+    ax.ticklabel_format(useOffset=False, style='plain')
+    plt.savefig('outputs/cycle_length.png')
+    plt.close(fig)
+
+
+ 
+
+def extractSpecificArbitrages(swaps, arbitrages, tokens, basic_stats, arbitrage_stats):
+    pass
+    ## ## Single vs Multi
+    ## done = [0, 0]
+    ## for arb in arbitrage_stats:
+    ##     if arb.multi_transaction and len(arb.balances) == 2 and len(arb.exchanges) == 1 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[0] += 1
+    ##         print("Multi-Transaction")
+    ##         pprint.pprint(arb.__dict__)
+    ##     if not arb.multi_transaction and len(arb.balances) == 3 and len(arb.exchanges) == 1 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[1] += 1
+    ##         print("Single-Transaction")
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Cross exchange
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if len(arb.exchanges) >= 3 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Same exchange
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if len(arb.exchanges) == 1 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Same exchange two tokesn
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if len(arb.exchanges) == 1 and not arb.multi_transaction and len(arb.balances) == 2 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Owned token
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if len(arb.exchanges) == 1 and not arb.multi_transaction and len(arb.balances) == 2 and sum(x > 0 for x in arb.balances.values()) == 1:
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Other token
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if  not arb.multi_transaction and sum(x > 0 for x in arb.balances.values()) == 1 and "WETH" in arb.balances and arb.balances["WETH"] == 0:
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+    ## ## Imprecise
+    ## done = [0]
+    ## for arb in arbitrage_stats:
+    ##     if  not arb.multi_transaction and sum(x > 0 for x in arb.balances.values()) == 2 and 1 in arb.balances.values():
+    ##         done[0] += 1
+    ##         pprint.pprint(arb.__dict__)
+    ##     if (all(x >= 3 for x in done)):
+    ##         break
+
 
 def main():
     print(f"Loading data")
@@ -689,6 +807,8 @@ def main():
     print(f"Analyzing")
     basic_stats, arbitrage_stats = analyze(swaps, arbitrages, tokens)
     ## playWithStatistics(basic_stats, arbitrage_stats):
+    print(f"Extract Specific Arbitrages")
+    extractSpecificArbitrages(swaps, arbitrages, tokens, basic_stats, arbitrage_stats)
     print(f"Creating Graphs")
     printStats(swaps, arbitrages, tokens, basic_stats, arbitrage_stats)
     createSwapsInArbitrageGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats)
@@ -700,39 +820,29 @@ def main():
     createCycleGraph(swaps, arbitrages, tokens, basic_stats, arbitrage_stats)
 
     """
-
         Things to show in data collection:
-
           x 1. Start/End Blocks + Number of swaps in total and in each exchange
-
           x 2. Number of swaps/swaps in arbitrages in each block : x - block number, y - swaps
           x 3. Number of arbitrages in each block : x - block number, y - arbitrages number
           x 3. Table for number of arbitrages per block
           x 4. Frequency of arbitrages: How many blocks pass between the arbitrages : histogram of frequencies
-
           x 2. Swaps in each dex: Pie chart of swaps per DEX
           x 8. Pie chart for arbitrages and dex combinations
           x     For each combination of exchanges (2^3) - how many arbitrages used them.
           x     How many used UniSwapV3 alone, how many used all of them, …
-
           x 6. Histogram of pools used in total : Identify top hitters
           x 7. Histogram of pools utilized for arbitrages
-
           x 8. Fees graph for arbitrages
           x 9. Profits and net-profit graphs on arbitrages
           x 9. Profits by exchange combination
           x 9. profits by type: in-transaction/sandwitch
           x 10. Exact and non-exact profits
-
           x 9. For each token type how many swaps on it and how many arbitrages used it - Bars
           x 10. For each token - how many times as src/dst and how many as internal
           x 11. For each token: how much is profited from it.
-
           x 6. For in-transaction: Cycle length. Histogram of arbitrage cycle lengths.
           x 7. For sandwitches: Cycle length and number of transactions maybe ?
           x 8. For sandwitches: Placement in block
-
-
     """
 
     
